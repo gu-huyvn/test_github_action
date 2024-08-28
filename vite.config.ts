@@ -13,12 +13,16 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     resolve: { alias: { '~': resolve(projectRootDir, 'src') } },
     server: {
-      https: {
-        key: fs.readFileSync(
-          path.resolve(__dirname, './certs/localhost-key.pem')
-        ),
-        cert: fs.readFileSync(path.resolve(__dirname, './certs/localhost.pem')),
-      },
+      https: fs.existsSync('./certs/localhost-key.pem')
+        ? {
+            key: fs.readFileSync(
+              path.resolve(__dirname, './certs/localhost-key.pem')
+            ),
+            cert: fs.readFileSync(
+              path.resolve(__dirname, './certs/localhost.pem')
+            ),
+          }
+        : undefined,
       host: '0.0.0.0',
       proxy: {
         '/proxy-api': {
