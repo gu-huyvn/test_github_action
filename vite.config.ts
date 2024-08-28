@@ -8,6 +8,7 @@ const projectRootDir = resolve(__dirname);
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  console.log('API_DOMAIN', JSON.stringify(env.API_DOMAIN));
 
   return {
     plugins: [react()],
