@@ -41,7 +41,7 @@ jobs:
       - name: Build
         env:
           APP_ENVIRONMENT: ${{ needs.init.outputs.mode }}
-          API_DOMAIN: ${{ env.API_DOMAIN }}
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
         run: yarn run build  # React ビルド
 
       - name: Deploy  # S3にデプロイ 
