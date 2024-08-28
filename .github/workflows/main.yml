@@ -1,0 +1,52 @@
+name: Build & Deploy 
+on:
+  push:
+      branches:
+        - develop
+        - main
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    outputs:
+      s3_bucket: ${{ steps.setvars.outputs.s3_bucket }}
+      mode: ${{ steps.setvars.outputs.mode }}
+    steps:
+      - name: Set variables
+        id: setvars
+        run: |
+          if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == "refs/heads/main" ]]; then
+            echo "s3_bucket=s3://admin.frmp.ftri.co.jp" >> $GITHUB_OUTPUT
+            echo "mode=production" >> $GITHUB_OUTPUT
+          fi
+
+          if [[ "${{github.base_ref}}" == "develop" || "${{github.ref}}" == "refs/heads/develop" ]]; then
+            echo "s3_bucket=s3://dev.admin.frmp.ftri.co.jp" >> $GITHUB_OUTPUT
+            echo "mode=development" >> $GITHUB_OUTPUT
+          fi
+  build:
+    runs-on: ubuntu-latest
+    environment: ${{ needs.init.outputs.mode }}
+    needs: init
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install # will run `yarn install` command
+
+      - name: Build
+        env:
+          APP_ENVIRONMENT: ${{ needs.init.outputs.mode }}
+          API_DOMAIN: ${{ env.API_DOMAIN }}
+        run: yarn run build  # React ビルド
+
+      - name: Deploy  # S3にデプロイ 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 cp --recursive --region ap-northeast-1 dist ${{needs.init.outputs.s3_bucket}}
